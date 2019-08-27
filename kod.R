@@ -1,4 +1,3 @@
-library(maptools)
 # INSTALACIJA PAKETA
 #install.packages("devtools")
 #install.packages("maptools")

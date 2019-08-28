@@ -107,6 +107,18 @@ library(RColorBrewer)
 mapviewOptions(vector.palette = colorRampPalette(brewer.pal(3, "Dark2")),
                na.color = "white")
 mapview(m300, zcol = "Nocenja", at = seq(50000, 4100000),legend = TRUE)
+mapview(m300, zcol = "Nocenja", breaks = c(0, 5, 20, 100,300) * 10000,legend = TRUE)
+
+#VIZUALIZACIJA  UZ PAKET TMAP 
+
+library(tmap)
+tm_shape(m300)+tm_fill()+tm_borders()
+
+tm_shape(m300) + tm_polygons(col = "ZUP_NAZIV", style = "cat")
+tm_shape(m300) + tm_polygons(col = "BrojDana", style = "equal")
+tm_shape(m300) + tm_polygons(col = "St/Kuc", style = "pretty")
+tm_shape(m300) + tm_polygons(col = "BrojStan", style = "quantile")
+tm_shape(m300) + tm_polygons(col = "BrojStan", style = "jenks")
 
 
 

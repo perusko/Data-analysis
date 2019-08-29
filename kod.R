@@ -120,7 +120,33 @@ tm_shape(m300) + tm_polygons(col = "St/Kuc", style = "pretty")
 tm_shape(m300) + tm_polygons(col = "BrojStan", style = "quantile")
 tm_shape(m300) + tm_polygons(col = "BrojStan", style = "jenks")
 
+#interaktivna karta
 
+tm_shape(m300) + tm_text(text = "OG_NAZIV")+tm_polygons(col = "BrojDana", style = "equal")
+tmap_mode("view")
+
+
+#Podaci za Istru
+Istra = subset(m300, ZUP_NAZIV=="Istarska zupanija")
+tm_shape(Istra)+tm_fill()+tm_borders()
+tm_shape(Istra) + tm_text(text = "OG_NAZIV")+tm_polygons(col = "BrojStan", style = "quantile")
+tm_shape(Istra) + tm_text(text = "OG_NAZIV")+tm_polygons(col = "Nocenja", style = "quantile")
+tm_shape(Istra) + tm_text(text = "OG_NAZIV")+tm_polygons(col = "BrojDana", style = "quantile")
+
+#izračun prostornog centroida za istarske općine
+library(rgeos)
+trueCentroids = gCentroid(Istra,byid =TRUE)
+mapView(Istra)
+points(coordinates(Istra),pch=1)
+points(trueCentroids,pch=2)
+mapView(Istra)+mapView(trueCentroids,col.regions = "red")
+
+#izračun prostornog centroida za istarsku županiju
+trueCentroids = gCentroid(Istra,byid =FALSE)
+mapView(Istra)
+points(coordinates(Istra),pch=1)
+points(trueCentroids,pch=2)
+mapView(Istra)+mapView(trueCentroids,col.regions = "red")
 
 
 

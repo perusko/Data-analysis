@@ -42,6 +42,9 @@ mySHP<- readOGR(myFile)# čitanje objekata unutar SHP file-a
 ## with 556 features
 ## It has 8 fields
 
+library(rgdal)
+
+
 class(mySHP)
 mode(mySHP)
 length(mySHP)
@@ -95,7 +98,7 @@ library(mapview)
 mapview(m100)
 m300 <- merge(mySHP, OG300, by='OG_MB')
 mapview(m300)
-m300 <- merge(mySHP101, OG300, by='OG_MB')
+m300 <- merge(mySHP, OG300, by='OG_MB')
 mapview(m300, zcol = "ZUP_NAZIV")
 mapview(m300, zcol = "BrojDana", at = seq(0, 10, 2), legend = TRUE)
 mapview(m300, zcol = "Kuc/Obj", at = seq(0.25, 1.05, 0.2), legend = TRUE)
@@ -108,6 +111,7 @@ mapviewOptions(vector.palette = colorRampPalette(brewer.pal(3, "Dark2")),
                na.color = "white")
 mapview(m300, zcol = "Nocenja", at = seq(50000, 4100000),legend = TRUE)
 mapview(m300, zcol = "Nocenja", breaks = c(0, 5, 20, 100,300) * 10000,legend = TRUE)
+
 
 #VIZUALIZACIJA  UZ PAKET TMAP 
 
@@ -148,5 +152,34 @@ points(coordinates(Istra),pch=1)
 points(trueCentroids,pch=2)
 mapView(Istra)+mapView(trueCentroids,col.regions = "red")
 
+#IZRADA PIVOT TABILCE i TORTNOG RPIKAZA,KAKO BI DOBILI PODATKE I UDIO NOCENJA PO ZUPANIJAMA
+library(dplyr)
 
+library(tidyr)
+pivotZupanije<-OG %>%
+  select(ZUP_NAZIV,Nocenja) %>%
+  group_by(ZUP_NAZIV) %>%
+  summarise(TotalNocenja=sum(Nocenja))
+
+library(plotrix)
+pie3D(pivotZupanije[[2]],labels=pivotZupanije[[1]],
+      explode=0.1,main="Udio noćenja po županijama")
+
+#vELIK BROJ ŽUPANIJA, PRIKAZUJE SE NAZIV I POSTAtAK SAMO ZA ISTRU
+postotak <- round(pivotZupanije$TotalNocenja/sum(pivotZupanije$TotalNocenja),2)
+postotak[postotak<0.2]<-0
+postotak <- paste0(postotak*100, "%")
+postotak[grep("0%", postotak)] <- ""
+
+
+# PIE CHART
+library(plotly)
+plot_ly(pivotZupanije, 
+        labels = ~ZUP_NAZIV,  
+        values = ~TotalNocenja,  
+        type = "pie",
+        text = postotak,
+        textposition = "inside",
+        textinfo = "text"
+)
 

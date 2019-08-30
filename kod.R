@@ -152,15 +152,57 @@ points(coordinates(Istra),pch=1)
 points(trueCentroids,pch=2)
 mapView(Istra)+mapView(trueCentroids,col.regions = "red")
 
-#IZRADA PIVOT TABILCE i TORTNOG RPIKAZA,KAKO BI DOBILI PODATKE I UDIO NOCENJA PO ZUPANIJAMA
-library(dplyr)
 
+#IZRADA PIVOT TABILCE KAKO BI DOBILI ZBIRNE PODATKE PO ZUPANIJAMA
+
+library(dplyr)
 library(tidyr)
 pivotZupanije<-OG %>%
   select(ZUP_NAZIV,Nocenja) %>%
   group_by(ZUP_NAZIV) %>%
   summarise(TotalNocenja=sum(Nocenja))
 
+#PODACI PO ŽUPANIJA, MIN, MAX NOĆENJA
+summary(pivotZupanije)
+
+         #TotalNocenja     
+         #Min.   :   12370  
+         #1st Qu.:   94842  
+         #Median :  193668  
+         #Mean   : 4259482  
+         #3rd Qu.: 5511680  
+         #Max.   :26184842 
+
+#SORTIRANJE PODATAKA
+pivotZupanije[order(pivotZupanije$TotalNocenja),]
+pivotZupanije[rev(order(pivotZupanije$TotalNocenja)),]
+
+#ZUP_NAZIV TotalNocenja
+#5                Istarska zupanija     26184842
+#16   Splitsko-dalmatinska zupanija     17506367
+#13     Primorsko-goranska zupanija     15282520
+#20               Zadarska zupanija      9587238
+#3  Dubrovacko-neretvanska zupanija      8047090
+#14       Sibensko-kninska zupanija      5511680
+#9           Licko-senjska zupanija      2749230
+#4                      Grad Zagreb      2511817
+#6              Karlovacka zupanija       607712
+#8      Krapinsko-zagorska zupanija       351921
+#11      Osjecko-baranjska zupanija       193668
+#21             Zagrebacka zupanija       191340
+#10            Medjimurska zupanija       180633
+#17            Varazdinska zupanija       134355
+#19   Vukovarsko-srijemska zupanija       128545
+#15     Sisacko-moslavacka zupanija        94842
+#1  Bjelovarsko-bilogorska zupanija        69874
+#2        Brodsko-posavska zupanija        45303
+#12      Pozesko-slavonska zupanija        35274
+#7  Koprivnicko-krizevacka zupanija        22491
+#18  Viroviticko-podravska zupanija        12370
+
+
+
+#PRIKAZ  NOĆENJA PO ŽUPANIJAMA
 library(plotrix)
 pie3D(pivotZupanije[[2]],labels=pivotZupanije[[1]],
       explode=0.1,main="Udio noćenja po županijama")
@@ -172,7 +214,6 @@ postotak <- paste0(postotak*100, "%")
 postotak[grep("0%", postotak)] <- ""
 
 
-# PIE CHART
 library(plotly)
 plot_ly(pivotZupanije, 
         labels = ~ZUP_NAZIV,  
@@ -181,5 +222,115 @@ plot_ly(pivotZupanije,
         text = postotak,
         textposition = "inside",
         textinfo = "text"
+)
+
+#HISTOGRAMI NOĆENJA PO ŽUPANIJAMA
+library(dplyr)
+ggbarplot(pivotZupanije, x = "ZUP_NAZIV", y = "TotalNocenja",
+          fill = "lightgray", 
+          xlab = "ŽUPANIJA", ylab = "BROJ NOĆENJA",
+          sort.val = "desc", 
+          x.text.angle = 45  
+)
+
+ggbarplot(pivotZupanije, x = "ZUP_NAZIV", y = "TotalNocenja",
+          fill = "red", 
+          xlab = "ŽUPANIJA", ylab = "BROJ NOĆENJA",
+          label = "TotalNocenja",
+          sort.val = "desc", 
+          top = 8,          
+          x.text.angle = 45  
+)
+
+#PRIKAZ  BROJA DOLAZAKA TURSISTA  PO ŽUPANIJAMA
+#PIVOT
+library(dplyr)
+library(tidyr)
+pivotDolasci<-OG %>%
+  select(ZUP_NAZIV,Dolasci) %>%
+  group_by(ZUP_NAZIV) %>%
+  summarise(TotalDolasci=sum(Dolasci))
+
+#vELIK BROJ ŽUPANIJA, PRIKAZUJE SE NAZIV I POSTAtAK SAMO ZA ISTRU
+postotak1 <- round(pivotDolasci$TotalDolasci/sum(pivotDolasci$TotalDolasci),2)
+postotak1[postotak1<0.05]<-0
+postotak1 <- paste0(postotak1*100, "%")
+postotak1[grep("0%", postotak1)] <- ""
+
+
+library(plotly)
+plot_ly(pivotDolasci, 
+        labels = ~ZUP_NAZIV,  
+        values = ~TotalDolasci,  
+        type = "pie",
+        text = postotak1,
+        textposition = "inside",
+        textinfo = "text"
+)
+
+#HISTOGRAMI NOĆENJA PO ŽUPANIJAMA
+library(dplyr)
+ggbarplot(pivotDolasci, x = "ZUP_NAZIV", y = "TotalDolasci",
+          fill = "lightgray", 
+          xlab = "ŽUPANIJA", ylab = "BROJ DOLAZAKA",
+          sort.val = "desc", 
+          x.text.angle = 45  
+)
+
+ggbarplot(pivotDolasci, x = "ZUP_NAZIV", y = "TotalDolasci",
+          fill = "red", 
+          xlab = "ŽUPANIJA", ylab = "BROJ DOLAZAKA",
+          label = "TotalDolasci",
+          sort.val = "desc", 
+          top = 8,          
+          x.text.angle = 45  
+)
+
+#sPAJANJE TABLICA KAKO BI DOBILI PROSJEČN BROJ DANA PO ŽUPANIJAMA
+
+BrojDana <- merge(pivotZupanije, pivotDolasci, by = "ZUP_NAZIV", all = TRUE)
+
+BrojDana<-BrojDana %>% 
+  mutate(BrojDana = TotalNocenja/TotalDolasci,options(digits=1))
+
+#ZUP_NAZIV TotalNocenja TotalDolasci BrojDana
+#1  Bjelovarsko-bilogorska zupanija        69874        20068  3.5
+#2        Brodsko-posavska zupanija        45303        26863  1.7
+#3  Dubrovacko-neretvanska zupanija      8047090      2013577  4.0
+#4                      Grad Zagreb      2511817      1400201  1.8
+#5                Istarska zupanija     26184842      4350195  6.1
+#6              Karlovacka zupanija       607712       353028  1.7
+#7  Koprivnicko-krizevacka zupanija        22491        11892  1.9
+#8      Krapinsko-zagorska zupanija       351921       154770  2.3
+#9           Licko-senjska zupanija      2749230       789330  3.5
+#10            Medjimurska zupanija       180633        73495  2.5
+#11      Osjecko-baranjska zupanija       193668        98514  2.0
+#12      Pozesko-slavonska zupanija        35274        15806  2.2
+#13     Primorsko-goranska zupanija     15282520      2909581  5.3
+#14       Sibensko-kninska zupanija      5511680       965089  5.7
+#15     Sisacko-moslavacka zupanija        94842        36807  2.6
+#16   Splitsko-dalmatinska zupanija     17506367      3467926  5.0
+#17            Varazdinska zupanija       134355        52364  2.6
+#18  Viroviticko-podravska zupanija        12370         4753  2.6
+#19   Vukovarsko-srijemska zupanija       128545        78735  1.6
+#20               Zadarska zupanija      9587238      1664144  5.8
+#21             Zagrebacka zupanija       191340       116159  1.6
+
+
+ggbarplot(BrojDana, x = "ZUP_NAZIV", y = "BrojDana",
+          fill = "red", 
+          xlab = "ŽUPANIJA", ylab = "BROJ DANA",
+          label = TRUE,lab.pos = c("in"),lab.nb.digits = 1,lab.col = "white",
+          sort.val = "desc", 
+          x.text.angle = 90  
+)
+
+ggbarplot(BrojDana, x = "ZUP_NAZIV", y = "BrojDana",
+          fill = "red", 
+          xlab = "ŽUPANIJA", ylab = "BROJ DANA",
+          label = TRUE,lab.pos = c("in"),lab.nb.digits = 2,lab.col = "white",
+          sort.val = "desc", 
+          top = 8,          
+          x.text.angle = 45  
 )
 

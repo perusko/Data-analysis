@@ -241,6 +241,15 @@ ggbarplot(pivotZupanije, x = "ZUP_NAZIV", y = "TotalNocenja",
           top = 8,          
           x.text.angle = 45  
 )
+#HISTOGRAMI NOĆENJA PO OPĆINAMA
+ggbarplot(OG, x = "OG_NAZIV", y = "Nocenja",
+          fill = "red", 
+          xlab = "OPĆINA", ylab = "NOĆENJA",
+          label = "Nocenja",
+          sort.val = "desc", 
+          top = 15,          
+          x.text.angle = 45  
+)
 
 #PRIKAZ  BROJA DOLAZAKA TURSISTA  PO ŽUPANIJAMA
 #PIVOT
@@ -286,14 +295,14 @@ ggbarplot(pivotDolasci, x = "ZUP_NAZIV", y = "TotalDolasci",
           x.text.angle = 45  
 )
 
-#HISTOGRAMI NOĆENJA PO OPĆINAMA
-ggbarplot(OG, x = "OG_NAZIV", y = "dOLA",
+#HISTOGRAM DOLAZAKA PO OPĆINAMA
+ggbarplot(OG, x = "OG_NAZIV", y = "Dolasci",
           fill = "red", 
-          xlab = "OPĆINA", ylab = "NOĆENJA",
-          label = "Nocenja",
+          xlab = "OPĆINA", ylab = "DOLASCI",
+          label = "Dolasci",
           sort.val = "desc", 
           top = 15,          
-          x.text.angle = 45  
+          x.text.angle = 90  
 )
 
 #sPAJANJE TABLICA KAKO BI DOBILI PROSJEČN BROJ DANA BORAVKA PO ŽUPANIJAMA
@@ -344,10 +353,29 @@ ggbarplot(BrojDana, x = "ZUP_NAZIV", y = "BrojDana",
           x.text.angle = 45  
 )
 
+#HISTOGRAM BROJA DANA PO OPĆINAMA
 ggbarplot(OG, x = "OG_NAZIV", y = "BrojDana",
           fill = "red", 
           xlab = "OPĆINA", ylab = "BROJ DANA",
           label = TRUE,lab.pos = c("in"),lab.nb.digits = 2,lab.col = "white",
+          sort.val = "desc", 
+          top = 15,          
+          x.text.angle = 90,  
+)
+#HISTOGRAM BROJ NOĆENJA PO STANOVNIKU
+ggbarplot(OG, x = "OG_NAZIV", y = "Nocenja_Stanovnika",
+          fill = "red", 
+          xlab = "OPĆINA", ylab = "NOĆENJA PO STANOVNIKU",
+          label = TRUE,lab.pos = c("in"),lab.nb.digits = 0,lab.col = "white",
+          sort.val = "desc", 
+          top = 15,          
+          x.text.angle = 90,  
+)
+#HISTOGRAM BROJ DOLAZAKA PO STANOVNIKU
+ggbarplot(OG, x = "OG_NAZIV", y = "Dolazaka_Stanovnika",
+          fill = "red", 
+          xlab = "OPĆINA", ylab = "DOLASKA PO STANOVNIKU",
+          label = TRUE,lab.pos = c("in"),lab.nb.digits = 0,lab.col = "white",
           sort.val = "desc", 
           top = 15,          
           x.text.angle = 90,  

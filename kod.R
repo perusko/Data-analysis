@@ -268,7 +268,7 @@ plot_ly(pivotDolasci,
         textinfo = "text"
 )
 
-#HISTOGRAMI NOĆENJA PO ŽUPANIJAMA
+#HISTOGRAMI DOLAZAKA PO ŽUPANIJAMA
 library(dplyr)
 ggbarplot(pivotDolasci, x = "ZUP_NAZIV", y = "TotalDolasci",
           fill = "lightgray", 
@@ -286,7 +286,17 @@ ggbarplot(pivotDolasci, x = "ZUP_NAZIV", y = "TotalDolasci",
           x.text.angle = 45  
 )
 
-#sPAJANJE TABLICA KAKO BI DOBILI PROSJEČN BROJ DANA PO ŽUPANIJAMA
+#HISTOGRAMI NOĆENJA PO OPĆINAMA
+ggbarplot(OG, x = "OG_NAZIV", y = "dOLA",
+          fill = "red", 
+          xlab = "OPĆINA", ylab = "NOĆENJA",
+          label = "Nocenja",
+          sort.val = "desc", 
+          top = 15,          
+          x.text.angle = 45  
+)
+
+#sPAJANJE TABLICA KAKO BI DOBILI PROSJEČN BROJ DANA BORAVKA PO ŽUPANIJAMA
 
 BrojDana <- merge(pivotZupanije, pivotDolasci, by = "ZUP_NAZIV", all = TRUE)
 
@@ -334,3 +344,11 @@ ggbarplot(BrojDana, x = "ZUP_NAZIV", y = "BrojDana",
           x.text.angle = 45  
 )
 
+ggbarplot(OG, x = "OG_NAZIV", y = "BrojDana",
+          fill = "red", 
+          xlab = "OPĆINA", ylab = "BROJ DANA",
+          label = TRUE,lab.pos = c("in"),lab.nb.digits = 2,lab.col = "white",
+          sort.val = "desc", 
+          top = 15,          
+          x.text.angle = 90,  
+)

@@ -380,3 +380,47 @@ ggbarplot(OG, x = "OG_NAZIV", y = "Dolazaka_Stanovnika",
           top = 15,          
           x.text.angle = 90,  
 )
+
+#LINIJE IZMEĐU SUSJEDNIH POLIGONA
+library(raster)
+library(spdep)
+Istra_shp = subset(mySHP, ZUP_NAZIV=="Istarska zupanija")
+
+wr <- poly2nb(Istra_shp, row.names=Istra_shp$OG_NAZIV, queen=FALSE)
+wr
+##Neighbour list object:
+##Number of regions: 41 
+##Number of nonzero links: 186 
+##Percentage nonzero weights: 11 
+##Average number of links: 5
+wm <- nb2mat(wr, style='B', zero.policy = TRUE)
+dim(wm)
+## [1] 41 41
+i <- rowSums(wm)
+i
+##BALE             BARBAN            BRTONIGLA           BUJE              BUZET           CEROVLJE 
+## 4                  7                 5                  3                 6               6 
+##GRACISCE         GROZNJAN          KANFANAR            KRSAN             LABIN           LANISCE 
+## 5                  6                 6                  5                 3               2 
+##LIZNJAN          LUPOGLAV          MARCANA             MEDULIN           MOTOVUN         NOVIGRAD 
+## 3                  4                 5                  2                 6               3 
+##OPRTALJ          PAZIN             PICAN               POREC             PULA            RASA 
+## 3                  8                 5                  7                 5               3 
+##ROVINJ           VRSAR             ZMINJ               SVETI LOVREC      SVETA NEDELJA   SVETI PETAR U SUMI 
+## 2                  3                 7                  4                  5              3 
+##SVETVINCENAT     TINJAN            UMAG                VISNJAN           VIZINADA        VODNJAN 
+## 6                  8                 2                  5                  5              5 
+##KAROJBA          KASTELIR-LABINCI  FAZANA              TAR-VABRIGA       FUNTANA 
+## 5                  7                 2                  3                  2
+
+round(100 * table(i) / length(i), 1)
+par(mai=c(0,0,0,0))
+plot(Istra_shp, col='gray', border='white')
+xy <- coordinates(Istra_shp)
+plot(wr, xy, col='red', lwd=2, add=TRUE)
+
+#vORONOI DIAGRAM
+library(dismo)
+library(ggvoronoi)
+IstraVoronoi <- voronoi(Istra_shp)
+plot(IstraVoronoi)

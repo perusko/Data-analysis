@@ -424,3 +424,64 @@ library(dismo)
 library(ggvoronoi)
 IstraVoronoi <- voronoi(Istra_shp)
 plot(IstraVoronoi)
+
+
+#UBACIVANJE KOORDINATA ZA 6 GRAVITACIJSKIH CENTARA U ISTRI
+library(rgdal)
+library(deldir)
+library(dplyr)
+library(ggplot2)
+gradovi <- c("Pula", "Rovinj", "Porec", "Umag", "Pazin", "Labin")
+lat <- c(44.86,45.08,45.23,45.43,45.24,45.10)
+lon <- c(13.85,13.64,13.59,13.52,13.94,14.12)
+GravitacijskiCentri <- data.frame(gradovi, lon, lat)
+
+#PRIKAZ VORONOI DIAGRAMA NA MAPI S 6 GRAVITACISKIH CENTARA
+coordinates(GravitacijskiCentri) <- c("lon", "lat")
+proj4string(GravitacijskiCentri) <- CRS("+proj=longlat")
+
+Istra2 <- Istra_shp
+proj4string(Istra2) <- proj4string(GravitacijskiCentri)
+Istra2 <- spTransform(Istra2, proj4string(GravitacijskiCentri))
+
+
+PolygonesVoronoi <- function(layer) {
+  require(deldir)
+  crds = layer@coords
+  z = deldir(crds[,1], crds[,2])
+  w = tile.list(z)
+  polys = vector(mode='list', length=length(w))
+  require(sp)
+  for (i in seq(along=polys)) {
+    pcrds = cbind(w[[i]]$x, w[[i]]$y)
+    pcrds = rbind(pcrds, pcrds[1,])
+    polys[[i]] = Polygons(list(Polygon(pcrds)), ID=as.character(i))
+  }
+  SP = SpatialPolygons(polys)
+  voronoi = SpatialPolygonsDataFrame(SP, data=data.frame(x=crds[,1], 
+                                                         y=crds[,2], row.names=sapply(slot(SP, 'polygons'), 
+                                                                                      function(x) slot(x, 'ID'))))
+}
+ResultsVoronoi <- PolygonesVoronoi(GravitacijskiCentri)
+
+
+proj4string(ResultsVoronoi) <- proj4string(GravitacijskiCentri)
+ResultsVoronoi <- spTransform(ResultsVoronoi, proj4string(GravitacijskiCentri))
+
+ResultsEnclosed <- gIntersection(ResultsVoronoi, Istra2, byid = TRUE)
+
+plot(ResultsEnclosed)
+points(x = GravitacijskiCentri$lon, y = GravitacijskiCentri$lat, pch = 20, col = "red", cex = 2)
+lines(ResultsVoronoi)
+
+
+
+
+#prostorna interpolacija
+library(rspatial)
+library(gstat)
+gs <- gstat(formula=prec~1, locations=dta, nmax=5, set=list(idp = 0))
+nn <- interpolate(r, gs)
+## [inverse distance weighted interpolation]
+nnmsk <- mask(nn, vr)
+plot(nnmsk)

@@ -35,14 +35,13 @@ if (!require("rspatial")) devtools::install_github('rspatial/rspatial')
 
 #UČITAVANJE SHP PODATAKA
 myFile<-choose.files()# učitavanje SHP datoteke opcine-gradovi
+library(rgdal)
 mySHP<- readOGR(myFile)# čitanje objekata unutar SHP file-a
 
 ## OGR data source with driver: ESRI Shapefile
 ## Source: "C:\Users\iperusko\Documents\IIP\Opcine_gradovi.shp", layer: "Opcine_gradovi"
 ## with 556 features
 ## It has 8 fields
-
-library(rgdal)
 
 
 class(mySHP)
@@ -98,7 +97,6 @@ library(mapview)
 mapview(m100)
 m300 <- merge(mySHP, OG300, by='OG_MB')
 mapview(m300)
-m300 <- merge(mySHP, OG300, by='OG_MB')
 mapview(m300, zcol = "ZUP_NAZIV")
 mapview(m300, zcol = "BrojDana", at = seq(0, 10, 2), legend = TRUE)
 mapview(m300, zcol = "Kuc/Obj", at = seq(0.25, 1.05, 0.2), legend = TRUE)
@@ -130,27 +128,6 @@ tm_shape(m300) + tm_text(text = "OG_NAZIV")+tm_polygons(col = "BrojDana", style 
 tmap_mode("view")
 
 
-#Podaci za Istru
-Istra = subset(m300, ZUP_NAZIV=="Istarska zupanija")
-tm_shape(Istra)+tm_fill()+tm_borders()
-tm_shape(Istra) + tm_text(text = "OG_NAZIV")+tm_polygons(col = "BrojStan", style = "quantile")
-tm_shape(Istra) + tm_text(text = "OG_NAZIV")+tm_polygons(col = "Nocenja", style = "quantile")
-tm_shape(Istra) + tm_text(text = "OG_NAZIV")+tm_polygons(col = "BrojDana", style = "quantile")
-
-#izračun prostornog centroida za istarske općine
-library(rgeos)
-trueCentroids = gCentroid(Istra,byid =TRUE)
-mapView(Istra)
-points(coordinates(Istra),pch=1)
-points(trueCentroids,pch=2)
-mapView(Istra)+mapView(trueCentroids,col.regions = "red")
-
-#izračun prostornog centroida za istarsku županiju
-trueCentroids = gCentroid(Istra,byid =FALSE)
-mapView(Istra)
-points(coordinates(Istra),pch=1)
-points(trueCentroids,pch=2)
-mapView(Istra)+mapView(trueCentroids,col.regions = "red")
 
 
 #IZRADA PIVOT TABILCE KAKO BI DOBILI ZBIRNE PODATKE PO ZUPANIJAMA
@@ -225,6 +202,7 @@ plot_ly(pivotZupanije,
 )
 
 #HISTOGRAMI NOĆENJA PO ŽUPANIJAMA
+library(ggpubr)
 library(dplyr)
 ggbarplot(pivotZupanije, x = "ZUP_NAZIV", y = "TotalNocenja",
           fill = "lightgray", 
@@ -251,9 +229,23 @@ ggbarplot(OG, x = "OG_NAZIV", y = "Nocenja",
           x.text.angle = 45  
 )
 
+#BOXPLOT NOĆENJA
+OG$OG_MB<- as.factor(OG$OG_MB)
+OG$OG_NAZIV<- as.factor(OG$OG_NAZIV)
+OG$OG_STATUS<- as.factor(OG$OG_STATUS)
+OG$ZUP_NAZIV<- as.factor(OG$ZUP_NAZIV)
+boxplot(OG$Nocenja)
+bwplot(Nocenja ~ ZUP_NAZIV, data=rbind(
+  OG[OG$ZUP_NAZIV=="Istarska zupanija",],
+  OG[OG$ZUP_NAZIV=="Splitsko-dalmatinska zupanija",],
+  OG[OG$ZUP_NAZIV=="Primorsko-goranska zupanija",])
+)
+
+
+
 #PRIKAZ  BROJA DOLAZAKA TURSISTA  PO ŽUPANIJAMA
 #PIVOT
-library(dplyr)
+
 library(tidyr)
 pivotDolasci<-OG %>%
   select(ZUP_NAZIV,Dolasci) %>%
@@ -278,7 +270,7 @@ plot_ly(pivotDolasci,
 )
 
 #HISTOGRAMI DOLAZAKA PO ŽUPANIJAMA
-library(dplyr)
+
 ggbarplot(pivotDolasci, x = "ZUP_NAZIV", y = "TotalDolasci",
           fill = "lightgray", 
           xlab = "ŽUPANIJA", ylab = "BROJ DOLAZAKA",
@@ -362,6 +354,17 @@ ggbarplot(OG, x = "OG_NAZIV", y = "BrojDana",
           top = 15,          
           x.text.angle = 90,  
 )
+
+#BOXPLOT BROJ DANA PO ŽUPANIJAMA
+bwplot(BrojDana ~ ZUP_NAZIV, data=rbind(
+  OG[OG$ZUP_NAZIV=="Istarska zupanija",],
+  OG[OG$ZUP_NAZIV=="Splitsko-dalmatinska zupanija",],
+  OG[OG$ZUP_NAZIV=="Primorsko-goranska zupanija",],
+  )
+ 
+)
+
+
 #HISTOGRAM BROJ NOĆENJA PO STANOVNIKU
 ggbarplot(OG, x = "OG_NAZIV", y = "Nocenja_Stanovnika",
           fill = "red", 
@@ -380,6 +383,105 @@ ggbarplot(OG, x = "OG_NAZIV", y = "Dolazaka_Stanovnika",
           top = 15,          
           x.text.angle = 90,  
 )
+
+
+
+
+#Podaci za Istru
+Istra = subset(m300, ZUP_NAZIV=="Istarska zupanija")
+tm_shape(Istra)+tm_fill()+tm_borders()
+tmap_mode("view")
+tm_shape(Istra) + tm_text(text = "OG_NAZIV")+tm_polygons(col = "BrojStan", style = "quantile")
+tm_shape(Istra) + tm_text(text = "OG_NAZIV")+tm_polygons(col = "Nocenja", style = "quantile")
+tm_shape(Istra) + tm_text(text = "OG_NAZIV")+tm_polygons(col = "BrojDana", style = "quantile")
+
+
+
+str(OGIstra)
+dim(OGIstra)
+summary(OGIstra)
+## OBJECTID      OG_MB             OG_NAZIV          OG_STATUS             ZUP_RB    ZUP_NAZIV           Shape_Leng    
+## Min.   :  5   Length:41          Length:41          Length:41          Min.   :18   Length:41          Min.   : 16168  
+## 1st Qu.:196   Class :character   Class :character   Class :character   1st Qu.:18   Class :character   1st Qu.: 33725  
+## Median :289   Mode  :character   Mode  :character   Mode  :character   Median :18   Mode  :character   Median : 45453  
+## Mean   :290                                                            Mean   :18                      Mean   : 50577  
+## 3rd Qu.:404                                                            3rd Qu.:18                      3rd Qu.: 65484  
+## Max.   :554                                                            Max.   :18                      Max.   :123836  
+## Shape_Area          BrojStan       Kucanstva       StObjekti         St/Kuc      St/Obj       Kuc/Obj   
+## Min.   :7.86e+06   Min.   :  327   Min.   :  130   Min.   :  338   Min.   :2   Min.   :0.8   Min.   :0.3  
+## 1st Qu.:3.53e+07   1st Qu.: 1408   1st Qu.:  415   1st Qu.:  560   1st Qu.:3   1st Qu.:1.8   1st Qu.:0.7  
+## Median :6.41e+07   Median : 2183   Median :  782   Median : 1160   Median :3   Median :2.1   Median :0.7  
+## Mean   :6.86e+07   Mean   : 5039   Mean   : 1914   Mean   : 2506   Mean   :3   Mean   :2.1   Mean   :0.7  
+## 3rd Qu.:9.02e+07   3rd Qu.: 4323   3rd Qu.: 1701   3rd Qu.: 2402   3rd Qu.:3   3rd Qu.:2.3   3rd Qu.:0.8  
+## Max.   :1.67e+08   Max.   :57191   Max.   :22705   Max.   :27686   Max.   :3   Max.   :3.0   Max.   :1.0  
+## Dolasci          Nocenja           BrojDana Nocenja_Stanovnika Dolazaka_Stanovnika
+## Min.   :     0   Min.   :      0   Min.   :0   Min.   :   0       Min.   :  0        
+## 1st Qu.:  7212   1st Qu.:  54247   1st Qu.:6   1st Qu.:  22       1st Qu.:  3        
+## Median : 14756   Median :  99814   Median :7   Median :  42       Median :  7        
+## Mean   :106102   Mean   : 638655   Mean   :7   Mean   : 168       Mean   : 25        
+## 3rd Qu.:144316   3rd Qu.:1033690   3rd Qu.:8   3rd Qu.: 181       3rd Qu.: 33        
+## Max.   :693348   Max.   :3905090   Max.   :9   Max.   :1832       Max.   :248  
+OGIstra$OG_MB<- as.factor(OGIstra$OG_MB)
+OGIstra$OG_NAZIV<- as.factor(OGIstra$OG_NAZIV)
+OGIstra$OG_STATUS<- as.factor(OGIstra$OG_STATUS)
+OGIstra$ZUP_NAZIV<- as.factor(OGIstra$ZUP_NAZIV)
+plot(OGIstra)
+
+#ZAMILJIVI ODNOSI=>VELIK BROJ NOĆENJA I STAN,5 DO 6 DANA,MALI BROJ, VIŠE OD 6 DANA
+ggplot(OGIstra, aes( x = BrojDana, y = Nocenja)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+
+ggplot(OGIstra, aes( x = BrojDana, y = BrojStan)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+
+boxplot(OGIstra$BrojDana)
+
+#HISTOGRAM BROJA DANA PO OPĆINAMA U ISTRI
+library(ggpubr)
+ggbarplot(OGIstra, x = "OG_NAZIV", y = "BrojDana",
+          fill = "red", 
+          xlab = "OPĆINA", ylab = "BROJ DANA",
+          label = TRUE,lab.pos = c("in"),lab.nb.digits = 2,lab.col = "white",
+          sort.val = "desc",
+          x.text.angle = 90,  
+)
+
+ggbarplot(OGIstra, x = "OG_NAZIV", y = "Nocenja_Stanovnika",
+          fill = "red", 
+          xlab = "OPĆINA", ylab = "BROJ DANA",
+          label = TRUE,lab.pos = c("in"),lab.nb.digits = 2,lab.col = "white",
+          sort.val = "desc",
+          top = 10,
+          x.text.angle = 90,  
+)
+
+ggbarplot(OGIstra, x = "OG_NAZIV", y = "Dolazaka_Stanovnika",
+          fill = "red", 
+          xlab = "OPĆINA", ylab = "BROJ DANA",
+          label = TRUE,lab.pos = c("in"),lab.nb.digits = 2,lab.col = "white",
+          sort.val = "desc",
+          top = 10,
+          x.text.angle = 90,  
+)
+
+#izračun prostornog centroida za istarske općine
+library(rgeos)
+trueCentroids = gCentroid(Istra,byid =TRUE)
+mapView(Istra)
+points(coordinates(Istra),pch=1)
+points(trueCentroids,pch=2)
+mapView(Istra)+mapView(trueCentroids,col.regions = "red")
+
+
+#izračun prostornog centroida za istarsku županiju
+trueCentroids = gCentroid(Istra,byid =FALSE)
+mapView(Istra)
+points(coordinates(Istra),pch=1)
+points(trueCentroids,pch=2)
+mapView(Istra)+mapView(trueCentroids,col.regions = "red")
+
 
 #LINIJE IZMEĐU SUSJEDNIH POLIGONA
 library(raster)
@@ -477,11 +579,3 @@ lines(ResultsVoronoi)
 
 
 
-#prostorna interpolacija
-library(rspatial)
-library(gstat)
-gs <- gstat(formula=prec~1, locations=dta, nmax=5, set=list(idp = 0))
-nn <- interpolate(r, gs)
-## [inverse distance weighted interpolation]
-nnmsk <- mask(nn, vr)
-plot(nnmsk)

@@ -457,6 +457,8 @@ ggbarplot(OGIstra, x = "OG_NAZIV", y = "Nocenja_Stanovnika",
           x.text.angle = 90,  
 )
 
+
+
 ggbarplot(OGIstra, x = "OG_NAZIV", y = "Dolazaka_Stanovnika",
           fill = "red", 
           xlab = "OPĆINA", ylab = "BROJ DANA",
@@ -465,6 +467,86 @@ ggbarplot(OGIstra, x = "OG_NAZIV", y = "Dolazaka_Stanovnika",
           top = 10,
           x.text.angle = 90,  
 )
+
+library(vioplot)
+vioplot(OGIstra$St_Kuc, OGIstra$St_Obj, 
+        ylim=c(0,5),
+        col = "dodgerblue", rectCol="dodgerblue3", colMed="red",
+        names=c("Stanovnika po kućanstvu", "Stanovnika po objektu"))
+
+#KORELACIJA
+
+corIstra<-OGIstra[,c("BrojStan","StObjekti","Dolasci","Nocenja","BrojDana")]
+cor(corIstra)
+##            BrojStan  StObjekti    Dolasci    Nocenja   BrojDana
+## BrojStan   1.0000000  0.9969248  0.5749051  0.5004559 -0.2202042
+## StObjekti  0.9969248  1.0000000  0.5832200  0.5102351 -0.2304577
+## Dolasci    0.5749051  0.5832200  1.0000000  0.9896285 -0.2118487
+## Nocenja    0.5004559  0.5102351  0.9896285  1.0000000 -0.1670388
+## BrojDana  -0.2202042 -0.2304577 -0.2118487 -0.1670388  1.0000000
+
+cor.test(corIstra$BrojStan, corIstra$Nocenja)
+#Pearson's product-moment correlation
+
+#data:  corIstra$BrojStan and corIstra$Nocenja
+# t = 3.6099, df = 39, p-value = 0.0008616
+##alternative hypothesis: true correlation is not equal to 0
+#95 percent confidence interval:
+# 0.2278931 0.7002864
+#sample estimates:
+#      cor 
+#0.5004559 
+
+#KOLEROGRAMI
+library(ggplot2)
+library(reshape2)
+qplot(x=Var1, y=Var2, data=melt(cor(corIstra, use="p")), fill=value, geom="tile") +
+  scale_fill_gradient2(limits=c(-1, 1))
+
+library(gclus)
+dta <- corIstra      
+dta.r <- abs(cor(dta))       
+dta.col <- dmat.color(dta.r)  
+dta.o <- order.single(dta.r)  
+cpairs(dta, dta.o, panel.colors=dta.col, gap=.5,
+       main="Varijable poredane i obojane prema veličini korelaciji")
+
+
+library(corrgram)
+corrgram(corIstra, order=TRUE, lower.panel=panel.shade,
+         upper.panel=panel.pie, text.panel=panel.txt,
+         main="Korelogram varijabli ")
+
+
+#REGRESIJA
+model <- lm(OGIstra$BrojStan~ OGIstra$Nocenja +
+                OGIstra$BrojDana)
+summary(model)
+## Call:
+##   lm(formula = OGIstra$BrojStan ~ OGIstra$Nocenja + OGIstra$BrojDana)
+
+## Residuals:
+#3   Min     1Q Median     3Q    Max 
+## -8328  -2903   -208    891  44873 
+
+## Coefficients:
+##   Estimate Std. Error t value Pr(>|t|)   
+## (Intercept)       6.616e+03  4.808e+03   1.376  0.17687   
+##OGIstra$Nocenja   4.457e-03  1.314e-03   3.392  0.00163 **
+##  OGIstra$BrojDana -6.633e+02  6.637e+02  -0.999  0.32391   
+##---
+##  Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+## Residual standard error: 8066 on 38 degrees of freedom
+## Multiple R-squared:  0.2697,	Adjusted R-squared:  0.2312 
+## F-statistic: 7.015 on 2 and 38 DF,  p-value: 0.002553
+
+fit <- lm(Nocenja ~ BrojDana + I(BrojDana^2), data=OGIstra)
+summary(fit)
+par(mfrow=c(2,2))
+plot(fit)
+
+
 
 #izračun prostornog centroida za istarske općine
 library(rgeos)
@@ -481,6 +563,8 @@ mapView(Istra)
 points(coordinates(Istra),pch=1)
 points(trueCentroids,pch=2)
 mapView(Istra)+mapView(trueCentroids,col.regions = "red")
+
+
 
 
 #LINIJE IZMEĐU SUSJEDNIH POLIGONA
@@ -520,6 +604,22 @@ par(mai=c(0,0,0,0))
 plot(Istra_shp, col='gray', border='white')
 xy <- coordinates(Istra_shp)
 plot(wr, xy, col='red', lwd=2, add=TRUE)
+
+wr2 <- poly2nb(Istra_shp, queen = FALSE)
+plot(wr2, coordinates(Istra_shp), add=TRUE, col='red')
+
+#CENTROIDI OPĆINA KOJI SU UDALJENI MANJE OD 5 KM I 10 KM
+nb <- dnearneigh(coordinates(Istra_shp),0,5000)
+nb_lw <- nb2listw(nb, style = 'B')
+plot(Istra_shp, border = 'lightgrey')
+plot(nb, coordinates(Istra_shp), add=TRUE, col = 'red')
+
+nb <- dnearneigh(coordinates(Istra_shp),0,10000)
+nb_lw <- nb2listw(nb, style = 'B')
+plot(Istra_shp, border = 'lightgrey')
+plot(nb, coordinates(Istra_shp), add=TRUE, col = 'red')
+## vidimo da je Marčana jedina koja nema središte susjednog poligona bliže od 10 km
+
 
 #vORONOI DIAGRAM
 library(dismo)

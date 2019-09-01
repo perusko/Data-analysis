@@ -57,6 +57,7 @@ names(mySHP2)
 library(ggplot2)
 ggplot(data = mySHP2, aes(x=long, y=lat, group=group))+geom_path()
 
+
 #UČITAVANJE DBF PODATAKA
 library(foreign)
 myFile2<-choose.files()
@@ -121,6 +122,7 @@ tm_shape(m300) + tm_polygons(col = "BrojDana", style = "equal")
 tm_shape(m300) + tm_polygons(col = "St/Kuc", style = "pretty")
 tm_shape(m300) + tm_polygons(col = "BrojStan", style = "quantile")
 tm_shape(m300) + tm_polygons(col = "BrojStan", style = "jenks")
+tm_shape(m300) + tm_polygons(col = "Nocenja", style = "cat")
 
 #interaktivna karta
 
@@ -225,10 +227,13 @@ ggbarplot(OG, x = "OG_NAZIV", y = "Nocenja",
           xlab = "OPĆINA", ylab = "NOĆENJA",
           label = "Nocenja",
           sort.val = "desc", 
-          top = 15,          
+          top=14,          
           x.text.angle = 45  
 )
 
+
+
+library(lattice)
 #BOXPLOT NOĆENJA
 OG$OG_MB<- as.factor(OG$OG_MB)
 OG$OG_NAZIV<- as.factor(OG$OG_NAZIV)
@@ -341,7 +346,7 @@ ggbarplot(BrojDana, x = "ZUP_NAZIV", y = "BrojDana",
           xlab = "ŽUPANIJA", ylab = "BROJ DANA",
           label = TRUE,lab.pos = c("in"),lab.nb.digits = 2,lab.col = "white",
           sort.val = "desc", 
-          top = 8,          
+          top = 7,          
           x.text.angle = 45  
 )
 
@@ -393,7 +398,7 @@ tm_shape(Istra)+tm_fill()+tm_borders()
 tmap_mode("view")
 tm_shape(Istra) + tm_text(text = "OG_NAZIV")+tm_polygons(col = "BrojStan", style = "quantile")
 tm_shape(Istra) + tm_text(text = "OG_NAZIV")+tm_polygons(col = "Nocenja", style = "quantile")
-tm_shape(Istra) + tm_text(text = "OG_NAZIV")+tm_polygons(col = "BrojDana", style = "quantile")
+tm_shape(Istra) + tm_text(text = "OG_NAZIV",)+tm_polygons(col = "BrojDana", style = "equal")
 
 
 
@@ -450,7 +455,7 @@ ggbarplot(OGIstra, x = "OG_NAZIV", y = "BrojDana",
 
 ggbarplot(OGIstra, x = "OG_NAZIV", y = "Nocenja_Stanovnika",
           fill = "red", 
-          xlab = "OPĆINA", ylab = "BROJ DANA",
+          xlab = "OPĆINA", ylab = "NOĆENJA PO STANOVNIKU",
           label = TRUE,lab.pos = c("in"),lab.nb.digits = 2,lab.col = "white",
           sort.val = "desc",
           top = 10,
@@ -461,7 +466,7 @@ ggbarplot(OGIstra, x = "OG_NAZIV", y = "Nocenja_Stanovnika",
 
 ggbarplot(OGIstra, x = "OG_NAZIV", y = "Dolazaka_Stanovnika",
           fill = "red", 
-          xlab = "OPĆINA", ylab = "BROJ DANA",
+          xlab = "OPĆINA", ylab = "DOLAZAKA PO STANOVIKU",
           label = TRUE,lab.pos = c("in"),lab.nb.digits = 2,lab.col = "white",
           sort.val = "desc",
           top = 10,
@@ -546,7 +551,7 @@ summary(fit)
 par(mfrow=c(2,2))
 plot(fit)
 
-
+library(mapview)
 
 #izračun prostornog centroida za istarske općine
 library(rgeos)
@@ -563,7 +568,6 @@ mapView(Istra)
 points(coordinates(Istra),pch=1)
 points(trueCentroids,pch=2)
 mapView(Istra)+mapView(trueCentroids,col.regions = "red")
-
 
 
 
@@ -614,11 +618,18 @@ nb_lw <- nb2listw(nb, style = 'B')
 plot(Istra_shp, border = 'lightgrey')
 plot(nb, coordinates(Istra_shp), add=TRUE, col = 'red')
 
+nb <- dnearneigh(coordinates(Istra_shp),0,8000)
+nb_lw <- nb2listw(nb, style = 'B')
+plot(Istra_shp, border = 'lightgrey')
+plot(nb, coordinates(Istra_shp), add=TRUE, col = 'red')
+
 nb <- dnearneigh(coordinates(Istra_shp),0,10000)
 nb_lw <- nb2listw(nb, style = 'B')
 plot(Istra_shp, border = 'lightgrey')
 plot(nb, coordinates(Istra_shp), add=TRUE, col = 'red')
 ## vidimo da je Marčana jedina koja nema središte susjednog poligona bliže od 10 km
+
+
 
 
 #vORONOI DIAGRAM
@@ -678,4 +689,96 @@ lines(ResultsVoronoi)
 
 
 
+#prikaz udaljenosti od granica u HRVATSKOJ
+library(rnaturalearth)
+library(sf)
+library(raster)
+library(tidyverse)
+library(RColorBrewer)
 
+
+world <- ne_countries(scale = 50)
+
+istra <- ne_countries(scale = 10, country = "Istra", returnclass = "sf")
+plot(croatia)
+croatia <- st_transform(croatia, 3055)
+grid <- st_make_grid(croatia, cellsize = 5000, what = "centers")
+grid <- st_intersection(grid, croatia)   
+
+plot(grid)
+
+croatia <- st_cast(croatia, "MULTILINESTRING")
+
+#izračun udaljenosti od granica
+dist <- st_distance(croatia, grid)
+df <- data.frame(dist = as.vector(dist)/1000,
+                 st_coordinates(grid))
+
+col_dist <- brewer.pal(11, "RdGy")
+
+
+ggplot(df, aes(X, Y, fill = dist))+
+  geom_tile()+ 
+  scale_fill_gradientn(colours = rev(col_dist))
+  labs(fill = "Distance (km)")+ 
+  theme_void()+ 
+  theme(legend.position = "bottom")
+  
+  ext <- extent(as(grid, "Spatial"))
+  
+ 
+  ext
+ # class      : Extent 
+ # xmin       : 3185406 
+ # xmax       : 3745406 
+ # ymin       : 5484178 
+# ymax       : 5919178 
+  
+  r <- raster(resolution = 5000, ext = ext, crs = "+proj=utm +zone=27 +ellps=intl
+              +towgs84=-73,47,-83,0,0,0,0 +units=m +no_defs")
+  
+
+  dist_sf <- st_as_sf(df, coords = c("X", "Y")) %>%
+    st_set_crs(3055)
+
+  dist_raster <- rasterize(dist_sf, r, "dist", fun = mean)
+  
+ 
+  dist_raster
+  
+  plot(dist_raster)
+
+  Šibenik = subset(m300, ZUP_NAZIV=="Sibensko-kninska zupanija")
+  tm_shape(Šibenik)+tm_fill()+tm_borders()
+  tmap_mode("view")
+  tm_shape(Šibenik) + tm_text(text = "OG_NAZIV")+tm_polygons(col = "BrojStan", style = "quantile")
+  tm_shape(Šibenik) + tm_text(text = "OG_NAZIV")+tm_polygons(col = "Nocenja", style = "quantile")
+  tm_shape(Šibenik) + tm_text(text = "OG_NAZIV",)+tm_polygons(col = "BrojDana", style = "quantile")
+  tm_shape(Šibenik) + tm_text(text = "OG_NAZIV")+tm_polygons(col = "Nocenja", style = "pretty")
+ 
+  Zadar = subset(m300,ZUP_NAZIV=="Zadarska zupanija")
+  tm_shape(Zadar) + tm_text(text = "OG_NAZIV")+tm_polygons(col = "BrojStan", style = "quantile")
+  tm_shape(Zadar) + tm_text(text = "OG_NAZIV")+tm_polygons(col = "Nocenja", style = "quantile")
+  tm_shape(Zadar) + tm_text(text = "OG_NAZIV",)+tm_polygons(col = "BrojDana", style = "pretty")
+  tm_shape(Zadar) + tm_text(text = "OG_NAZIV")+tm_polygons(col = "Nocenja", style = "pretty")
+  
+ Split = subset(m300,ZUP_NAZIV=="Splitsko-dalmatinska zupanija")
+ tm_shape(Split) + tm_text(text = "OG_NAZIV")+tm_polygons(col = "BrojStan", style = "quantile")
+ tm_shape(Split) + tm_text(text = "OG_NAZIV")+tm_polygons(col = "Nocenja", style = "quantile")
+ tm_shape(Split) + tm_text(text = "OG_NAZIV",)+tm_polygons(col = "BrojDana", style = "pretty")
+ tm_shape(Split) + tm_text(text = "OG_NAZIV")+tm_polygons(col = "Nocenja", style = "pretty")
+ 
+ 
+ 
+ library(data.table)
+ library(formattable)
+ customGreen0 = "#DeF7E9"
+ customGreen = "#71CA97"
+ customRed = "#ff7f7f"
+ i1<-Sibensko_kninska
+ formattable(i1)
+ 
+ 
+ 
+ 
+  
